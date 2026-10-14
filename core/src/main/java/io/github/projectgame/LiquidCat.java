@@ -11,16 +11,16 @@ public class LiquidCat {
     private final Texture texture;
     private final Sprite sprite;
 
-    private float x = 200;
-    private float y = 150;
-    private final float speed = 250;
+    private float speed = 250f;
 
-    private boolean facingRight = true;
     private boolean attacking = false;
     private boolean attackHitApplied = false;
-    private float attackTimer = 0;
+    private float attackTimer = 0f;
+    private final float attackDuration = 0.2f;
 
-    private static final float ATTACK_DURATION = 0.2f;
+    private boolean facingRight = true;
+
+    private int health = 5;
 
     public LiquidCat() {
         texture = new Texture(
@@ -29,42 +29,46 @@ public class LiquidCat {
 
         sprite = new Sprite(texture);
         sprite.setSize(55, 55);
-        sprite.setPosition(x, y);
+        sprite.setPosition(200, 150);
     }
 
     public void update(float delta) {
-        float movement = speed * delta;
 
+        // Move with arrow keys
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            x -= movement;
+            sprite.translateX(-speed * delta);
             facingRight = false;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            x += movement;
+            sprite.translateX(speed * delta);
             facingRight = true;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            y += movement;
+            sprite.translateY(speed * delta);
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            y -= movement;
+            sprite.translateY(-speed * delta);
         }
 
-        x = Math.max(0,
-            Math.min(x, Gdx.graphics.getWidth() - sprite.getWidth()));
+        // Keep cat inside the screen
+        float maxX = Gdx.graphics.getWidth() - sprite.getWidth();
+        float maxY = Gdx.graphics.getHeight() - sprite.getHeight();
 
-        y = Math.max(0,
-            Math.min(y, Gdx.graphics.getHeight() - sprite.getHeight()));
+        sprite.setX(Math.max(0, Math.min(sprite.getX(), maxX)));
+        sprite.setY(Math.max(0, Math.min(sprite.getY(), maxY)));
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+        // Start an attack with SPACE
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+            && !attacking) {
             attacking = true;
-            attackTimer = ATTACK_DURATION;
             attackHitApplied = false;
+            attackTimer = attackDuration;
         }
 
+        // End the attack after a short time
         if (attacking) {
             attackTimer -= delta;
 
@@ -72,33 +76,36 @@ public class LiquidCat {
                 attacking = false;
             }
         }
-
-        sprite.setPosition(x, y);
     }
 
     public void draw(SpriteBatch batch) {
         sprite.draw(batch);
     }
 
+    // Check whether the rat is within the cat's attack range
     public boolean canHitRat(Rat rat) {
+
         if (!attacking || attackHitApplied || !rat.isAlive()) {
             return false;
         }
 
-        float catCenterX = x + sprite.getWidth() / 2;
-        float catCenterY = y + sprite.getHeight() / 2;
+        float attackRange = 65f;
 
-        float ratCenterX = rat.getX() + rat.getWidth() / 2;
-        float ratCenterY = rat.getY() + rat.getHeight() / 2;
+        float catCenterX = sprite.getX() + sprite.getWidth() / 2f;
+        float catCenterY = sprite.getY() + sprite.getHeight() / 2f;
+
+        float ratCenterX = rat.getX() + rat.getWidth() / 2f;
+        float ratCenterY = rat.getY() + rat.getHeight() / 2f;
 
         float dx = ratCenterX - catCenterX;
         float dy = ratCenterY - catCenterY;
 
-        boolean inFront = facingRight ? dx > 0 : dx < 0;
+        // Only attack in the direction the cat is facing
+        if (facingRight && dx < 0) return false;
+        if (!facingRight && dx > 0) return false;
 
-        return inFront
-            && Math.abs(dx) <= 65
-            && Math.abs(dy) <= 35;
+        return Math.abs(dx) < attackRange
+            && Math.abs(dy) < 45f;
     }
 
     public void markAttackHit() {
@@ -109,12 +116,28 @@ public class LiquidCat {
         return attacking;
     }
 
+    public boolean isFacingRight() {
+        return facingRight;
+    }
+
+    // Rat damage
+    public void takeDamage() {
+        if (health > 0) {
+            health--;
+        }
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    // Position and size getters
     public float getX() {
-        return x;
+        return sprite.getX();
     }
 
     public float getY() {
-        return y;
+        return sprite.getY();
     }
 
     public float getWidth() {
@@ -123,10 +146,6 @@ public class LiquidCat {
 
     public float getHeight() {
         return sprite.getHeight();
-    }
-
-    public boolean isFacingRight() {
-        return facingRight;
     }
 
     public void dispose() {

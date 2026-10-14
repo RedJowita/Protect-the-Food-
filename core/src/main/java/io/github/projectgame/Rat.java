@@ -1,9 +1,10 @@
+
 package io.github.projectgame;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.Gdx;
 
 public class Rat {
 
@@ -12,7 +13,7 @@ public class Rat {
 
     private float x;
     private float y;
-    private final float speed = 65;
+    private final float speed = 35f;
 
     private int health = 2;
     private boolean alive = true;
@@ -30,21 +31,23 @@ public class Rat {
         sprite.setPosition(x, y);
     }
 
-    public void update(float delta, LiquidCat cat) {
-        if (!alive) {
+    // Move toward a food target
+    public void update(float delta, Food targetFood) {
+        if (!alive || targetFood == null || targetFood.isCollected()) {
             return;
         }
 
-        float catCenterX = cat.getX() + cat.getWidth() / 2;
-        float catCenterY = cat.getY() + cat.getHeight() / 2;
-        float ratCenterX = x + sprite.getWidth() / 2;
-        float ratCenterY = y + sprite.getHeight() / 2;
+        float targetX = targetFood.getX() + targetFood.getWidth() / 2f;
+        float targetY = targetFood.getY() + targetFood.getHeight() / 2f;
 
-        float dx = catCenterX - ratCenterX;
-        float dy = catCenterY - ratCenterY;
+        float ratCenterX = x + sprite.getWidth() / 2f;
+        float ratCenterY = y + sprite.getHeight() / 2f;
+
+        float dx = targetX - ratCenterX;
+        float dy = targetY - ratCenterY;
         float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
-        if (distance > 1) {
+        if (distance > 1f) {
             x += (dx / distance) * speed * delta;
             y += (dy / distance) * speed * delta;
         }
